@@ -1,7 +1,7 @@
 package org.example.httpapiapp.controller;
 
-import org.example.httpapi.model.ShortUrl;
-import org.example.httpapi.service.ShortUrlService;
+import org.example.httpapiapp.entity.ShortUrl;
+import org.example.httpapiapp.service.ShortUrlService;
 import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.Test;
 import org.mockito.Mockito;

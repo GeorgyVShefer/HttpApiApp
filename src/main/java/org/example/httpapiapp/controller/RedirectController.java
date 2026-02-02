@@ -1,6 +1,7 @@
 package org.example.httpapiapp.controller;
 
-import org.example.httpapi.service.ShortUrlService;
+import org.example.httpapiapp.exception.ShortUrlNotFoundException;
+import org.example.httpapiapp.service.ShortUrlService;
 import org.springframework.http.HttpStatus;
 import org.springframework.http.ResponseEntity;
 import org.springframework.stereotype.Controller;
@@ -19,7 +20,7 @@ public class RedirectController {
     }
 
      @GetMapping("/{code}")
-     public ResponseEntity<Void> redirect(@PathVariable String code) {
+     public ResponseEntity<Void> redirect(@PathVariable String code) throws ShortUrlNotFoundException {
         String url = service.getOriginalUrl(code);
         return ResponseEntity
                 .status(HttpStatus.FOUND)

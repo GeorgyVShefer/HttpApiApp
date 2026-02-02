@@ -1,10 +1,12 @@
 package org.example.httpapiapp.service;
 
-import org.example.httpapi.model.ShortUrl;
-import org.example.httpapi.repository.ShortUrlRepository;
-import org.springframework.http.HttpStatus;
+import org.example.httpapiapp.exception.InvalidAliasFormatException;
+import org.example.httpapiapp.exception.ReservedAliasException;
+import org.example.httpapiapp.exception.ShortUrlNotFoundException;
+import org.example.httpapiapp.entity.ShortUrl;
+import org.example.httpapiapp.repository.ShortUrlRepository;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.stereotype.Service;
-import org.springframework.web.server.ResponseStatusException;
 
 import java.security.SecureRandom;
 import java.util.Random;
@@ -14,12 +16,12 @@ import java.util.regex.Pattern;
 @Service
 public class ShortUrlService {
 
-    private static final String BASE_URL = "http://localhost:8080/";
+    @Value("${app.base-url}")
+    private String baseUrl;
+
     private static final String ALPHABET = "abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789";
     private static final int CODE_LENGTH = 6;
-
     private static final Pattern ALIAS_PATTERN = Pattern.compile("^[a-zA-Z0-9_-]{3,32}$");
-
     private static final Set<String> RESERVED_ALIASES = Set.of("api", "swagger", "swagger-ui", "v3", "actuator");
 
     private final ShortUrlRepository repository;
@@ -40,42 +42,51 @@ public class ShortUrlService {
         if (alias != null && !alias.isBlank()) {
             validateAlias(alias);
 
-            if (repository.existsByShortCode(alias)) {
-                throw new ResponseStatusException(
-                        HttpStatus.CONFLICT,
-                        "Alias already exists"
-                );
-            }
 
-            code = alias;
+            ShortUrl entity = new ShortUrl();
+            entity.setShortCode(alias);
+            entity.setOriginalUrl(originalUrl);
+
+            try {
+                repository.save(entity);
+                code = alias;
+            } catch (Exception e) {
+                return "Alias already exists";
+            }
         } else {
-            code = generateUniqueCode();
+
+            code = generateUniqueCode(originalUrl);
         }
 
-        ShortUrl entity = new ShortUrl();
-        entity.setShortCode(code);
-        entity.setOriginalUrl(originalUrl);
-
-        repository.save(entity);
-        return BASE_URL + code;
+        return baseUrl + code;
     }
 
-    public String getOriginalUrl(String code) {
+    public String getOriginalUrl(String code) throws ShortUrlNotFoundException {
         return repository.findByShortCode(code)
-                .orElseThrow(() ->
-                        new ResponseStatusException(
-                                HttpStatus.NOT_FOUND,
-                                "Short URL not found"
-                        )
-                )
+                .orElseThrow(() -> new ShortUrlNotFoundException(code))
                 .getOriginalUrl();
     }
 
-    private String generateUniqueCode() {
-        String code;
-        do {
-            code = generateCode();
-        } while (repository.existsByShortCode(code));
+    private String generateUniqueCode(String originalUrl) {
+
+        String code = generateCode();
+
+        while (true) {
+
+            ShortUrl entity = new ShortUrl();
+            entity.setShortCode(code);
+            entity.setOriginalUrl(originalUrl);
+
+            try {
+
+                repository.save(entity);
+                break;
+            } catch (Exception e) {
+
+                code = generateCode();
+            }
+        }
+
         return code;
     }
 
@@ -90,17 +101,11 @@ public class ShortUrlService {
     private void validateAlias(String alias) {
 
         if (!ALIAS_PATTERN.matcher(alias).matches()) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Invalid alias format"
-            );
+            throw new InvalidAliasFormatException(alias);
         }
 
         if (RESERVED_ALIASES.contains(alias.toLowerCase())) {
-            throw new ResponseStatusException(
-                    HttpStatus.BAD_REQUEST,
-                    "Alias is reserved"
-            );
+            throw new ReservedAliasException(alias);
         }
     }
 }

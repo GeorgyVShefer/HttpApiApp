@@ -1,7 +1,7 @@
 package org.example.httpapiapp.service;
 
-import org.example.httpapi.model.ShortUrl;
-import org.example.httpapi.repository.ShortUrlRepository;
+import org.example.httpapiapp.entity.ShortUrl;
+import org.example.httpapiapp.repository.ShortUrlRepository;
 import org.junit.jupiter.api.Test;
 import org.junit.jupiter.api.extension.ExtendWith;
 import org.mockito.InjectMocks;

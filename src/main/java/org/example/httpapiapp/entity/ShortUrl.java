@@ -1,4 +1,4 @@
-package org.example.httpapiapp.model;
+package org.example.httpapiapp.entity;
 
 import jakarta.persistence.Column;
 import jakarta.persistence.Entity;
@@ -9,8 +9,9 @@ import jakarta.persistence.Table;
 import lombok.Getter;
 import lombok.NoArgsConstructor;
 import lombok.Setter;
+import org.hibernate.annotations.CreationTimestamp;
 
-import java.time.LocalDateTime;
+import java.time.OffsetDateTime;
 
 @Entity
 @Table(name = "short_urls")
@@ -29,7 +30,8 @@ public class ShortUrl {
     @Column(nullable = false, length = 2048)
     private String originalUrl;
 
-    @Column(nullable = false)
-    private LocalDateTime createdAt = LocalDateTime.now();
+    @CreationTimestamp
+    @Column(nullable = false, updatable = false)
+    private OffsetDateTime createdAt;
 
 }
